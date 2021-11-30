@@ -1,0 +1,12 @@
+
+# vscode
+
+.vscode
+.pypirc
+
+# python
+
+__pycache__/
+.venv/
+dist
+JioSaavn.egg-info
