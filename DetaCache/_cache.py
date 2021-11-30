@@ -9,6 +9,8 @@ def detaCache(urlArg:str,dbCache = None):
                 print('Deta base not found!')
                 return await function(*args, **kwargs)
             url = kwargs.get(urlArg)
+            if not url:
+                return await function(*args, **kwargs)
             data = dbCache.get(key=url)
             if not data:
                 _data = await function(*args, **kwargs)

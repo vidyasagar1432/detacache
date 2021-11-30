@@ -1,0 +1,10 @@
+MANIFEST.in
+README.md
+setup.py
+DetaCache/__init__.py
+DetaCache/_cache.py
+DetaCache.egg-info/PKG-INFO
+DetaCache.egg-info/SOURCES.txt
+DetaCache.egg-info/dependency_links.txt
+DetaCache.egg-info/not-zip-safe
+DetaCache.egg-info/top_level.txt
