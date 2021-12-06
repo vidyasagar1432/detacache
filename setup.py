@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setup(
     name = 'DetaCache', 
     packages = ['DetaCache'],
-    version = 'v0.0.1',
+    version = 'v0.0.2',
     license='MIT', 
     description = 'Decorator to cache to Deta base',
     long_description=long_description,
@@ -16,8 +16,10 @@ setup(
     author_email = 'svidya051@gmail.com',
     url = 'https://github.com/vidyasagar1432/JioSaavn',
     # download_url = '',
-    keywords = ['deta','cache','base'], 
-    install_requires=[],
+    keywords = ['deta','cache','base','cache api call'], 
+    install_requires=[
+        'deta',
+        ],
     include_package_data=True,
     zip_safe=False,
     classifiers=[

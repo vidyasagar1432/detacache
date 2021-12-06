@@ -1,22 +1,27 @@
 import asyncio
 import aiohttp
+import requests
+
 from DetaCache import detaCache
-from deta import Deta
-
-db = Deta('project_key').Base("base_name")
 
 
-@detaCache(dbCache=db,urlArg='url')
-async def getjSON(url:str):
+app = detaCache(projectKey='c0reypnf_MSMvWY1BqNaDFgAvsPe9YJ9nqPiKNt9Z')
+
+@app.cacheAsyncFunction()
+async def asyncgetjSON(url:str):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
-            if not response.status == 404:
-                return await response.json()
-            return None
+            return await response.json()
+
+@app.cacheSyncFunction()
+def syncgetjSON(url:str):
+    return requests.get(url).json()
 
 async def main():
-    data = await getjSON(url='https://httpbin.org/json')
-    print(data)
+    asyncdata = await asyncgetjSON('https://httpbin.org/json')
+    print(asyncdata)
+    syncdata = syncgetjSON('https://httpbin.org/json')
+    print(syncdata)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())

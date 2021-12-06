@@ -1,6 +1,6 @@
 # [DetaCache](https://github.com/vidyasagar1432/DetaCache)
 
-#### Async Function Decorator to cache to Deta base.
+#### Async and Sync Function Decorator to cache function call's to Deta base.
 
 ## Installing
 
@@ -8,25 +8,32 @@
 pip3 install DetaCache
 ```
 
-## Async
+## Async and Sync
 ```python
 import asyncio
 import aiohttp
+import requests
+
 from DetaCache import detaCache
-from deta import Deta
-
-db = Deta('project_key').Base("base_name")
 
 
-@detaCache(dbCache=db,urlArg='url')
-async def getjSON(url:str):
+app = detaCache(projectKey='projectKey',projectId='projectId',baseName='baseName')
+
+@app.cacheAsyncFunction()
+async def asyncgetjSON(url:str):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.json()
 
+@app.cacheSyncFunction()
+def syncgetjSON(url:str):
+    return requests.get(url).json()
+
 async def main():
-    data = await getjSON(url='https://httpbin.org/json')
-    print(data)
+    asyncdata = await asyncgetjSON('https://httpbin.org/json')
+    print(asyncdata)
+    syncdata = syncgetjSON('https://httpbin.org/json')
+    print(syncdata)
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
