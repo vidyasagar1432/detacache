@@ -5,7 +5,7 @@ import requests
 from DetaCache import detaCache
 
 
-app = detaCache(projectKey='c0reypnf_MSMvWY1BqNaDFgAvsPe9YJ9nqPiKNt9Z')
+app = detaCache(projectKey='projectKey')
 
 @app.cacheAsyncFunction()
 async def asyncgetjSON(url:str):
