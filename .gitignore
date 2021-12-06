@@ -8,6 +8,6 @@
 
 __pycache__/
 .venv/
-dist
-build
-DetaCache.egg-info
+dist/
+build/
+DetaCache.egg-info/
