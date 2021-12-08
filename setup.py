@@ -19,6 +19,8 @@ setup(
     keywords = ['deta','cache','base','cache api call'], 
     install_requires=[
         'deta',
+        'aiohttp',
+        'tinydb'
         ],
     include_package_data=True,
     zip_safe=False,

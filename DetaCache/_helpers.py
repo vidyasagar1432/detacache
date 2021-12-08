@@ -1,4 +1,6 @@
 import inspect
+import hashlib
+
 
 def inspectDecorator(func, args, kwargs):
     argspec = inspect.getfullargspec(func)
@@ -9,4 +11,10 @@ def inspectDecorator(func, args, kwargs):
     if kwargs:
         for k, v in kwargs.items():
             data.update({str(k):str(v)})
-    return data
+    return data 
+
+def intHashKey(string:str):
+    return int(hashlib.md5(str(string).encode()).hexdigest(),16)
+
+def stringHashKey(string:str):
+    return hashlib.md5(str(string).encode()).hexdigest()

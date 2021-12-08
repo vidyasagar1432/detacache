@@ -1,7 +1,8 @@
 from functools import wraps
 from deta import Deta
 
-from ._helpers import inspectDecorator
+from ._helpers import inspectDecorator,stringHashKey
+
 
 class detaCache(object):
     def __init__(self, projectKey: str = None,projectId: str = None,baseName:str='cache'):
@@ -11,18 +12,18 @@ class detaCache(object):
         def wrapped(function):
             @wraps(function)
             async def wrappedFunction(*args, **kwargs):
-                print(function.__name__)
                 arg = inspectDecorator(function,args,kwargs)
                 if not arg:
-                    raise 
-                data = self.dbCache.fetch(query={'function':function.__name__,'Arg':arg}).items
+                    arg = None
+                key=stringHashKey(f'{function.__name__}{arg}')
+                data = self.dbCache.get(key=key)
                 if not data:
                     _data = await function(*args, **kwargs)
-                    self.dbCache.put(data={'value':_data,'function':function.__name__,'Arg':arg})
+                    self.dbCache.put(data={'value':_data,'function':function.__name__,'Arg':arg},key=key)
                     return _data
                 if count:
-                    self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=data[0]['key'])
-                return data[0]['value']
+                    self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=key)
+                return data['value']
             return wrappedFunction
         return wrapped
     
@@ -30,17 +31,20 @@ class detaCache(object):
         def wrapped(function):
             @wraps(function)
             def wrappedFunction(*args, **kwargs):
-                print(function.__name__)
                 arg = inspectDecorator(function,args,kwargs)
                 if not arg:
-                    raise 
-                data = self.dbCache.fetch(query={'function':function.__name__,'Arg':arg}).items
+                    arg = None
+                key = stringHashKey(f'{function.__name__}{arg}')
+                data = self.dbCache.get(key=key)
                 if not data:
                     _data = function(*args, **kwargs)
-                    self.dbCache.put(data={'value':_data,'function':function.__name__,'Arg':arg})
+                    self.dbCache.put(data={'value':_data,'function':function.__name__,'Arg':arg},key=key)
                     return _data
                 if count:
-                    self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=data[0]['key'])
-                return data[0]['value']
+                    self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=key)
+                return data['value']
             return wrappedFunction
         return wrapped
+    
+    
+    
