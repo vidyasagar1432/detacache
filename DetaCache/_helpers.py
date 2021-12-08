@@ -1,8 +1,9 @@
 import inspect
 import hashlib
+from datetime import datetime
 
 
-def inspectDecorator(func, args, kwargs):
+def getDecoratorArgs(func, args, kwargs):
     argspec = inspect.getfullargspec(func)
     data = dict()
     if argspec.args and type(argspec.args is list):
@@ -11,10 +12,20 @@ def inspectDecorator(func, args, kwargs):
     if kwargs:
         for k, v in kwargs.items():
             data.update({str(k):str(v)})
-    return data 
+    return data
 
-def intHashKey(string:str):
+
+def createIntHashKey(string:str):
     return int(hashlib.md5(str(string).encode()).hexdigest(),16)
 
-def stringHashKey(string:str):
+def createStringHashKey(string:str):
     return hashlib.md5(str(string).encode()).hexdigest()
+
+
+def getCurrentTimestamp():
+    return int(round(datetime.now().timestamp()))
+
+
+def checkExpiredTimestamp(expire:int,initialTimestamp:int,currentTimestamp:int):
+    return initialTimestamp + expire < currentTimestamp
+
