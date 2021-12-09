@@ -7,20 +7,19 @@ with open("README.md", "r") as fh:
 setup(
     name = 'DetaCache', 
     packages = ['DetaCache'],
-    version = 'v0.0.2',
+    version = 'v0.0.3',
     license='MIT', 
-    description = 'Decorator to cache to Deta base',
+    description = 'Decorator to cache in Deta base',
     long_description=long_description,
     long_description_content_type="text/markdown",
     author = 'vidya sagar', 
     author_email = 'svidya051@gmail.com',
-    url = 'https://github.com/vidyasagar1432/JioSaavn',
-    # download_url = '',
-    keywords = ['deta','cache','base','cache api call'], 
+    url = 'https://github.com/vidyasagar1432/DetaCache',
+    keywords = ['deta','cache','deta base cache','cache api call','cache functions','cache locally'], 
     install_requires=[
-        'deta',
-        'aiohttp',
-        'tinydb'
+        'deta==1.0.1',
+        'aiohttp==3.8.1',
+        'tinydb==4.5.2'
         ],
     include_package_data=True,
     zip_safe=False,

@@ -1,5 +1,5 @@
 from functools import wraps
-from tinydb import TinyDB,Query
+from tinydb import TinyDB
 from tinydb.table import Document
 from tinydb.operations import increment
 
@@ -7,12 +7,58 @@ from ._helpers import getDecoratorArgs,createIntHashKey,getCurrentTimestamp,chec
 
 
 class localCache(object):
+    '''## Create an instance of localCache.
+    
+    Args:
+        filePath (str,optional): Sets the Path of file . Defaults to `cache.json`.
+        tableName (int, optional): Sets the name of table. Defaults to `cache`.
+        
+    Example:
+        Calling `localCache` gives an instance of localCache.
+    ```
+        import aiohttp
+        import requests
+        from DetaCache import localCache
+
+        app = localCache('cache.json')
+
+        @app.cacheAsyncFunction()
+        async def asyncgetjSON(url:str):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    return await response.json()
+
+        @app.cacheSyncFunction()
+        def syncgetjSON(url:str):
+            return requests.get(url).json()
+    ```
+    '''
     def __init__(self,filePath:str='cache.json', tableName: str = 'cache'):
         db = TinyDB(filePath)
         self.dbCache = db.table(tableName)
-        self.q = Query()
 
-    def cacheAsyncFunction(self,expire:int=None,count:bool=False) -> None:
+    def cacheAsyncFunction(self,expire:int=None,log:bool=False,count:bool=False) -> None:
+        '''## Decorator for Async Function to cache locally.
+
+        Args:
+            expire (int, optional): Sets the expire time to expire in sec . Defaults to `None`.
+            log (bool, optional): Sets whether to log. Defaults to `False`.
+            count (bool, optional): counts how many times function is called. Defaults to `False`.
+            
+        Note:
+            count will make function slow by 50-150 ms if `True`
+            
+        Example:
+        ```
+            from DetaCache import localCache
+
+            app = localCache('cache.json')
+
+            @app.cacheAsyncFunction()
+            async def someAsyncFunction(url:str):
+                pass
+        ```
+        '''
         def wrapped(function):
             @wraps(function)
             async def wrappedFunction(*args, **kwargs):
@@ -32,7 +78,8 @@ class localCache(object):
                         doc_id=key))
                     return _data
                 if cached.get('expire') and checkExpiredTimestamp(cached.get('expire'),cached.get('timestamp'),getCurrentTimestamp()):
-                    print('cache expired, updating....')
+                    if log:
+                        print('cache expired, updating....')
                     _data = await function(*args, **kwargs)
                     self.dbCache.update(Document({
                         'value':_data,
@@ -46,7 +93,28 @@ class localCache(object):
             return wrappedFunction
         return wrapped
     
-    def cacheSyncFunction(self,expire:int=None,count:bool=False)-> None:
+    def cacheSyncFunction(self,expire:int=None,log:bool=False,count:bool=False)-> None:
+        '''## Decorator for Sync Function to cache locally.
+
+        Args:
+            expire (int, optional): Sets the expire time to expire in sec. Defaults to `None`.
+            log (bool, optional): Sets whether to log. Defaults to `False`.
+            count (bool, optional): counts how many times function is called. Defaults to `False`.
+            
+        Note:
+            count will make function slow by 50-150 ms if `True`
+            
+        Example:
+        ```
+            from DetaCache import localCache
+
+            app = localCache('cache.json')
+
+            @app.cacheSyncFunction()
+            def somesyncFunction(url:str):
+                pass
+        ```
+        '''
         def wrapped(function):
             @wraps(function)
             def wrappedFunction(*args, **kwargs):
@@ -66,7 +134,8 @@ class localCache(object):
                         doc_id=key))
                     return _data
                 if cached.get('expire') and checkExpiredTimestamp(cached.get('expire'),cached.get('timestamp'),getCurrentTimestamp()):
-                    print('cache expired, updating....')
+                    if log:
+                        print('cache expired, updating....')
                     _data = function(*args, **kwargs)
                     self.dbCache.update(Document({
                         'value':_data,

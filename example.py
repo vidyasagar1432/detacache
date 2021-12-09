@@ -4,11 +4,10 @@ import requests
 
 from DetaCache import detaCache, localCache
 
-
+# for local cache
 app = localCache('cache.json')
-# OR
+# for deta cache
 app = detaCache(projectKey='projectKey')
-
 
 @app.cacheAsyncFunction()
 async def asyncgetjSON(url:str):
@@ -16,11 +15,9 @@ async def asyncgetjSON(url:str):
         async with session.get(url) as response:
             return await response.json()
 
-
 @app.cacheSyncFunction()
 def syncgetjSON(url:str):
     return requests.get(url).json()
-
 
 async def main():
     asyncdata = await asyncgetjSON('https://httpbin.org/json')

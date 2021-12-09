@@ -8,16 +8,18 @@
 pip3 install DetaCache
 ```
 
-## Async and Sync
+## Async and Sync Decorator to cache function
 ```python
 import asyncio
 import aiohttp
 import requests
 
-from DetaCache import detaCache
+from DetaCache import detaCache, localCache
 
-
-app = detaCache(projectKey='projectKey',projectId='projectId',baseName='baseName')
+# for local cache
+app = localCache('cache.json')
+# for deta cache
+app = detaCache('projectKey')
 
 @app.cacheAsyncFunction()
 async def asyncgetjSON(url:str):
