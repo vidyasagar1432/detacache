@@ -2,6 +2,7 @@
 from deta import Deta
 import aiohttp
 
+
 class CacheApi(object):
     def __init__(self, projectKey: str = None,projectId: str = None,baseName:str='cache'):
         self.dbCache = Deta(project_key=projectKey,project_id=projectId).Base(baseName)

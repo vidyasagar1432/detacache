@@ -59,34 +59,55 @@ class detaCache(object):
         ```
         '''
         def wrapped(function):
+            
             @wraps(function)
             async def wrappedFunction(*args, **kwargs):
                 functionArgs = getDecoratorArgs(function,args,kwargs)
                 key = createStringHashKey(f'{function.__name__}{functionArgs}')
                 cached = self.dbCache.get(key=key)
+                
                 if not cached:
+                    if log:print(f'{function.__name__} with {functionArgs} cache MISS')
                     _data = await function(*args, **kwargs)
                     self.dbCache.put(data={
                         'value':_data,
                         'function':function.__name__,
                         'Arg':functionArgs,
                         'expire':expire,
+                        'called':0,
                         'timestamp':getCurrentTimestamp()
                         },
                         key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
                     return _data
-                if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
-                    if log:
-                        print('cache expired, updating....')
+                
+                if not cached['expire'] == expire:
+                    if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
                     _data = await function(*args, **kwargs)
                     self.dbCache.update(updates={
                         'value':_data,
-                        'timestamp':getCurrentTimestamp()
-                        },
-                        key=key)
+                        'expire':expire,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':self.dbCache.util.increment(1) if count else cached['called']
+                        },key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
+                    return _data
+                
+                if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
+                    if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
+                    _data = await function(*args, **kwargs)
+                    self.dbCache.update(updates={
+                        'value':_data,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':self.dbCache.util.increment(1) if count else cached['called']
+                        },key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
+                    return _data
                 if count:
                     self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=key)
+                if log:print(f'{function.__name__} with {functionArgs} cached HIT')
                 return cached['value']
+            
             return wrappedFunction
         return wrapped
 
@@ -113,34 +134,54 @@ class detaCache(object):
         ```
         '''
         def wrapped(function):
+            
             @wraps(function)
             def wrappedFunction(*args, **kwargs):
                 functionArgs = getDecoratorArgs(function,args,kwargs)
                 key = createStringHashKey(f'{function.__name__}{functionArgs}')
                 cached = self.dbCache.get(key=key)
+                
                 if not cached:
+                    if log:print(f'{function.__name__} with {functionArgs} cache MISS')
                     _data = function(*args, **kwargs)
                     self.dbCache.put(data={
                         'value':_data,
                         'function':function.__name__,
                         'Arg':functionArgs,
                         'expire':expire,
+                        'called':0,
                         'timestamp':getCurrentTimestamp()
                         },
                         key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
                     return _data
-                if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
-                    if log:
-                        print('cache expired, updating....')
+                
+                if not cached['expire'] == expire:
+                    if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
                     _data = function(*args, **kwargs)
                     self.dbCache.update(updates={
                         'value':_data,
-                        'timestamp':getCurrentTimestamp()
-                        },
-                        key=key)
+                        'expire':expire,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':self.dbCache.util.increment(1) if count else cached['called']
+                        },key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
+                    return _data
+                
+                if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
+                    if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
+                    _data = function(*args, **kwargs)
+                    self.dbCache.update(updates={
+                        'value':_data,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':self.dbCache.util.increment(1) if count else cached['called']
+                        },key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
+                    return _data
                 if count:
                     self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=key)
+                if log:print(f'{function.__name__} with {functionArgs} cached HIT')
                 return cached['value']
+            
             return wrappedFunction
         return wrapped
-

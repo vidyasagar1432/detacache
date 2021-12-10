@@ -2,11 +2,9 @@ import asyncio
 import aiohttp
 import requests
 
-from DetaCache import detaCache, localCache
+from DetaCache import detaCache
 
-# for local cache
-app = localCache('cache.json')
-# for deta cache
+
 app = detaCache(projectKey='projectKey')
 
 @app.cacheAsyncFunction()
