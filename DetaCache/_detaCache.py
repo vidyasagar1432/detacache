@@ -1,4 +1,4 @@
-
+import asyncio
 from functools import wraps
 from deta import Deta
 
@@ -34,7 +34,7 @@ class detaCache(object):
     ```
     '''
     def __init__(self, projectKey: str = None,projectId: str = None,baseName:str='cache'):
-        self.dbCache = Deta(project_key=projectKey,project_id=projectId).Base(baseName)
+        self._dbCache = Deta(project_key=projectKey,project_id=projectId).Base(baseName)
 
     def cacheAsyncFunction(self,expire:int=None,log:bool=False,count:bool=False) -> None:
         '''## Decorator for Async Function to cache in Deta Base.
@@ -51,7 +51,7 @@ class detaCache(object):
         ```
             from DetaCache import detaCache
 
-            app = detaCache('cache.json')
+            app = detaCache('projectKey')
 
             @app.cacheAsyncFunction()
             async def someAsyncFunction(url:str):
@@ -64,12 +64,12 @@ class detaCache(object):
             async def wrappedFunction(*args, **kwargs):
                 functionArgs = getDecoratorArgs(function,args,kwargs)
                 key = createStringHashKey(f'{function.__name__}{functionArgs}')
-                cached = self.dbCache.get(key=key)
+                cached = self._dbCache.get(key=key)
                 
                 if not cached:
                     if log:print(f'{function.__name__} with {functionArgs} cache MISS')
                     _data = await function(*args, **kwargs)
-                    self.dbCache.put(data={
+                    self._dbCache.put(data={
                         'value':_data,
                         'function':function.__name__,
                         'Arg':functionArgs,
@@ -84,11 +84,11 @@ class detaCache(object):
                 if not cached['expire'] == expire:
                     if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
                     _data = await function(*args, **kwargs)
-                    self.dbCache.update(updates={
+                    self._dbCache.update(updates={
                         'value':_data,
                         'expire':expire,
                         'timestamp':getCurrentTimestamp(),
-                        'called':self.dbCache.util.increment(1) if count else cached['called']
+                        'called':self._dbCache.util.increment(1) if count else cached['called']
                         },key=key)
                     if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
                     return _data
@@ -96,15 +96,15 @@ class detaCache(object):
                 if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
                     if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
                     _data = await function(*args, **kwargs)
-                    self.dbCache.update(updates={
+                    self._dbCache.update(updates={
                         'value':_data,
                         'timestamp':getCurrentTimestamp(),
-                        'called':self.dbCache.util.increment(1) if count else cached['called']
+                        'called':self._dbCache.util.increment(1) if count else cached['called']
                         },key=key)
                     if log:print(f'{function.__name__} with {functionArgs} cached..')
                     return _data
                 if count:
-                    self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=key)
+                    self._dbCache.update(updates={'called':self._dbCache.util.increment(1)},key=key)
                 if log:print(f'{function.__name__} with {functionArgs} cached HIT')
                 return cached['value']
             
@@ -126,7 +126,7 @@ class detaCache(object):
         ```
             from DetaCache import detaCache
 
-            app = detaCache('cache.json')
+            app = detaCache('projectKey')
 
             @app.cacheSyncFunction()
             async def someSyncFunction(url:str):
@@ -139,12 +139,12 @@ class detaCache(object):
             def wrappedFunction(*args, **kwargs):
                 functionArgs = getDecoratorArgs(function,args,kwargs)
                 key = createStringHashKey(f'{function.__name__}{functionArgs}')
-                cached = self.dbCache.get(key=key)
+                cached = self._dbCache.get(key=key)
                 
                 if not cached:
                     if log:print(f'{function.__name__} with {functionArgs} cache MISS')
                     _data = function(*args, **kwargs)
-                    self.dbCache.put(data={
+                    self._dbCache.put(data={
                         'value':_data,
                         'function':function.__name__,
                         'Arg':functionArgs,
@@ -159,11 +159,11 @@ class detaCache(object):
                 if not cached['expire'] == expire:
                     if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
                     _data = function(*args, **kwargs)
-                    self.dbCache.update(updates={
+                    self._dbCache.update(updates={
                         'value':_data,
                         'expire':expire,
                         'timestamp':getCurrentTimestamp(),
-                        'called':self.dbCache.util.increment(1) if count else cached['called']
+                        'called':self._dbCache.util.increment(1) if count else cached['called']
                         },key=key)
                     if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
                     return _data
@@ -171,17 +171,143 @@ class detaCache(object):
                 if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
                     if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
                     _data = function(*args, **kwargs)
-                    self.dbCache.update(updates={
+                    self._dbCache.update(updates={
                         'value':_data,
                         'timestamp':getCurrentTimestamp(),
-                        'called':self.dbCache.util.increment(1) if count else cached['called']
+                        'called':self._dbCache.util.increment(1) if count else cached['called']
                         },key=key)
                     if log:print(f'{function.__name__} with {functionArgs} cached..')
                     return _data
                 if count:
-                    self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=key)
+                    self._dbCache.update(updates={'called':self._dbCache.util.increment(1)},key=key)
                 if log:print(f'{function.__name__} with {functionArgs} cached HIT')
                 return cached['value']
             
             return wrappedFunction
+        return wrapped
+    
+    def cache(self,expire:int=None,log:bool=False,count:bool=False) -> None:
+        '''## Decorator to cache in Deta Base.
+        Args:
+            expire (int, optional): Sets the expire time to expire in sec . Defaults to `None`.
+            log (bool, optional): Sets whether to log. Defaults to `False`.
+            count (bool, optional): counts how many times function is called. Defaults to `False`.
+            
+        Note:
+            count will make function slow by 50-150 ms if `True`
+            
+        Example:
+        ```
+            from DetaCache import detaCache
+            
+            app = detaCache('projectKey')
+            
+            @app.cache()
+            async def function(url:str):
+                pass
+        ```
+        '''
+        def wrapped(function):
+            
+            @wraps(function)
+            async def asyncWrappedFunction(*args, **kwargs):
+                functionArgs = getDecoratorArgs(function,args,kwargs)
+                key = createStringHashKey(f'{function.__name__}{functionArgs}')
+                cached = self._dbCache.get(key=key)
+                
+                if not cached:
+                    if log:print(f'{function.__name__} with {functionArgs} cache MISS')
+                    _data = await function(*args, **kwargs)
+                    self._dbCache.put(data={
+                        'value':_data,
+                        'function':function.__name__,
+                        'Arg':functionArgs,
+                        'expire':expire,
+                        'called':0,
+                        'timestamp':getCurrentTimestamp()
+                        },
+                        key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
+                    return _data
+                
+                if not cached['expire'] == expire:
+                    if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
+                    _data = await function(*args, **kwargs)
+                    self._dbCache.update(updates={
+                        'value':_data,
+                        'expire':expire,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':self._dbCache.util.increment(1) if count else cached['called']
+                        },key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
+                    return _data
+                
+                if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
+                    if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
+                    _data = await function(*args, **kwargs)
+                    self._dbCache.update(updates={
+                        'value':_data,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':self._dbCache.util.increment(1) if count else cached['called']
+                        },key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
+                    return _data
+                if count:
+                    self._dbCache.update(updates={'called':self._dbCache.util.increment(1)},key=key)
+                if log:print(f'{function.__name__} with {functionArgs} cached HIT')
+                return cached['value']
+            
+            @wraps(function)
+            def syncWrappedFunction(*args, **kwargs):
+                functionArgs = getDecoratorArgs(function,args,kwargs)
+                key = createStringHashKey(f'{function.__name__}{functionArgs}')
+                cached = self._dbCache.get(key=key)
+                
+                if not cached:
+                    if log:print(f'{function.__name__} with {functionArgs} cache MISS')
+                    _data = function(*args, **kwargs)
+                    self._dbCache.put(data={
+                        'value':_data,
+                        'function':function.__name__,
+                        'Arg':functionArgs,
+                        'expire':expire,
+                        'called':0,
+                        'timestamp':getCurrentTimestamp()
+                        },
+                        key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
+                    return _data
+                
+                if not cached['expire'] == expire:
+                    if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
+                    _data = function(*args, **kwargs)
+                    self._dbCache.update(updates={
+                        'value':_data,
+                        'expire':expire,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':self._dbCache.util.increment(1) if count else cached['called']
+                        },key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
+                    return _data
+                
+                if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
+                    if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
+                    _data = function(*args, **kwargs)
+                    self._dbCache.update(updates={
+                        'value':_data,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':self._dbCache.util.increment(1) if count else cached['called']
+                        },key=key)
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
+                    return _data
+                if count:
+                    self._dbCache.update(updates={'called':self._dbCache.util.increment(1)},key=key)
+                if log:print(f'{function.__name__} with {functionArgs} cached HIT')
+                return cached['value']
+            
+            if asyncio.iscoroutinefunction(function):
+                return asyncWrappedFunction
+            else:
+                return syncWrappedFunction
+        
         return wrapped

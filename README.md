@@ -28,6 +28,16 @@ async def asyncgetjSON(url:str):
 def syncgetjSON(url:str):
     return requests.get(url).json()
 
+@app.cache()
+async def _asyncgetjSON(url:str):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+
+@app.cache()
+def _syncgetjSON(url:str):
+    return requests.get(url).json()
+
 async def main():
     asyncdata = await asyncgetjSON('https://httpbin.org/json')
     print(asyncdata)

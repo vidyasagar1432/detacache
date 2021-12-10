@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setup(
     name = 'DetaCache', 
     packages = ['DetaCache'],
-    version = 'v0.0.4',
+    version = 'v0.0.6',
     license='MIT', 
     description = 'Decorator to cache in Deta base',
     long_description=long_description,
