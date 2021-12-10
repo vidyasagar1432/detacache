@@ -1,4 +1,5 @@
 
+import asyncio
 from functools import wraps
 from deta import Deta
 
@@ -22,13 +23,13 @@ class detaCache(object):
 
         app = detaCache('projectKey')
 
-        @app.cacheAsyncFunction()
+        @app.cache()
         async def asyncgetjSON(url:str):
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
                     return await response.json()
 
-        @app.cacheSyncFunction()
+        @app.cache()
         def syncgetjSON(url:str):
             return requests.get(url).json()
     ```
@@ -36,8 +37,8 @@ class detaCache(object):
     def __init__(self, projectKey: str = None,projectId: str = None,baseName:str='cache'):
         self.dbCache = Deta(project_key=projectKey,project_id=projectId).Base(baseName)
 
-    def cacheAsyncFunction(self,expire:int=None,log:bool=False,count:bool=False) -> None:
-        '''## Decorator for Async Function to cache in Deta Base.
+    def cache(self,expire:int=None,log:bool=False,count:bool=False) -> None:
+        '''## Decorator to cache in Deta Base.
 
         Args:
             expire (int, optional): Sets the expire time to expire in sec . Defaults to `None`.
@@ -53,15 +54,15 @@ class detaCache(object):
 
             app = detaCache('cache.json')
 
-            @app.cacheAsyncFunction()
-            async def someAsyncFunction(url:str):
+            @app.cache()
+            async def function(url:str):
                 pass
         ```
         '''
         def wrapped(function):
             
             @wraps(function)
-            async def wrappedFunction(*args, **kwargs):
+            async def asyncWrappedFunction(*args, **kwargs):
                 functionArgs = getDecoratorArgs(function,args,kwargs)
                 key = createStringHashKey(f'{function.__name__}{functionArgs}')
                 cached = self.dbCache.get(key=key)
@@ -108,35 +109,8 @@ class detaCache(object):
                 if log:print(f'{function.__name__} with {functionArgs} cached HIT')
                 return cached['value']
             
-            return wrappedFunction
-        return wrapped
-
-    def cacheSyncFunction(self,expire:int=None,log:bool=False,count:bool=False)-> None:
-        '''## Decorator for Sync Function to cache in Deta Base.
-
-        Args:
-            expire (int, optional): Sets the expire time to expire in sec . Defaults to `None`.
-            log (bool, optional): Sets whether to log. Defaults to `False`.
-            count (bool, optional): counts how many times function is called. Defaults to `False`.
-            
-        Note:
-            count will make function slow by 50-150 ms if `True`
-            
-        Example:
-        ```
-            from DetaCache import detaCache
-
-            app = detaCache('cache.json')
-
-            @app.cacheSyncFunction()
-            async def someSyncFunction(url:str):
-                pass
-        ```
-        '''
-        def wrapped(function):
-            
             @wraps(function)
-            def wrappedFunction(*args, **kwargs):
+            def syncWrappedFunction(*args, **kwargs):
                 functionArgs = getDecoratorArgs(function,args,kwargs)
                 key = createStringHashKey(f'{function.__name__}{functionArgs}')
                 cached = self.dbCache.get(key=key)
@@ -183,5 +157,9 @@ class detaCache(object):
                 if log:print(f'{function.__name__} with {functionArgs} cached HIT')
                 return cached['value']
             
-            return wrappedFunction
+            if asyncio.iscoroutinefunction(function):
+                return asyncWrappedFunction
+            else:
+                return syncWrappedFunction
+        
         return wrapped

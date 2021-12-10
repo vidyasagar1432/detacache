@@ -1,118 +1,45 @@
-
+import asyncio
 from functools import wraps
-from deta import Deta
+from tinydb import TinyDB
+from tinydb.table import Document
+from tinydb.operations import increment
 
-from ._helpers import getDecoratorArgs,createStringHashKey,getCurrentTimestamp,checkExpiredTimestamp
+from ._helpers import getDecoratorArgs,createIntHashKey,getCurrentTimestamp,checkExpiredTimestamp
 
 
-class detaCache(object):
-    '''## Create an instance of detaCache.
+class localCache(object):
+    '''## Create an instance of localCache.
     
     Args:
-        projectKey (str): Sets the projectKey of Deta .
-        projectId (str, optional): Sets the projectId of Deta.
-        baseName (str,optional): Sets the name of DetaBase. Defaults to `cache`.
-    
+        filePath (str,optional): Sets the Path of file . Defaults to `cache.json`.
+        tableName (int, optional): Sets the name of table. Defaults to `cache`.
+        
     Example:
-        Calling `detaCache` gives an instance of detaCache.
+        Calling `localCache` gives an instance of localCache.
     ```
         import aiohttp
         import requests
-        from DetaCache import detaCache
+        from DetaCache import localCache
 
-        app = detaCache('projectKey')
+        app = localCache('cache.json')
 
-        @app.cacheAsyncFunction()
+        @app.cacheasync()
         async def asyncgetjSON(url:str):
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
                     return await response.json()
 
-        @app.cacheSyncFunction()
+        @app.cache()
         def syncgetjSON(url:str):
             return requests.get(url).json()
     ```
     '''
-    def __init__(self, projectKey: str = None,projectId: str = None,baseName:str='cache'):
-        self.dbCache = Deta(project_key=projectKey,project_id=projectId).Base(baseName)
+    def __init__(self,filePath:str='cache.json', tableName: str = 'cache'):
+        db = TinyDB(filePath)
+        self.dbCache = db.table(tableName)
 
-    def cacheAsyncFunction(self,expire:int=None,log:bool=False,count:bool=False) -> None:
-        '''## Decorator for Async Function to cache in Deta Base.
-
-        Args:
-            expire (int, optional): Sets the expire time to expire in sec . Defaults to `None`.
-            log (bool, optional): Sets whether to log. Defaults to `False`.
-            count (bool, optional): counts how many times function is called. Defaults to `False`.
-            
-        Note:
-            count will make function slow by 50-150 ms if `True`
-            
-        Example:
-        ```
-            from DetaCache import detaCache
-
-            app = detaCache('cache.json')
-
-            @app.cacheAsyncFunction()
-            async def someAsyncFunction(url:str):
-                pass
-        ```
-        '''
-        def wrapped(function):
-            
-            @wraps(function)
-            async def wrappedFunction(*args, **kwargs):
-                functionArgs = getDecoratorArgs(function,args,kwargs)
-                key = createStringHashKey(f'{function.__name__}{functionArgs}')
-                cached = self.dbCache.get(key=key)
-                
-                if not cached:
-                    if log:print(f'{function.__name__} with {functionArgs} cache MISS')
-                    _data = await function(*args, **kwargs)
-                    self.dbCache.put(data={
-                        'value':_data,
-                        'function':function.__name__,
-                        'Arg':functionArgs,
-                        'expire':expire,
-                        'called':0,
-                        'timestamp':getCurrentTimestamp()
-                        },
-                        key=key)
-                    if log:print(f'{function.__name__} with {functionArgs} cached..')
-                    return _data
-                
-                if not cached['expire'] == expire:
-                    if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
-                    _data = await function(*args, **kwargs)
-                    self.dbCache.update(updates={
-                        'value':_data,
-                        'expire':expire,
-                        'timestamp':getCurrentTimestamp(),
-                        'called':self.dbCache.util.increment(1) if count else cached['called']
-                        },key=key)
-                    if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
-                    return _data
-                
-                if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
-                    if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
-                    _data = await function(*args, **kwargs)
-                    self.dbCache.update(updates={
-                        'value':_data,
-                        'timestamp':getCurrentTimestamp(),
-                        'called':self.dbCache.util.increment(1) if count else cached['called']
-                        },key=key)
-                    if log:print(f'{function.__name__} with {functionArgs} cached..')
-                    return _data
-                if count:
-                    self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=key)
-                if log:print(f'{function.__name__} with {functionArgs} cached HIT')
-                return cached['value']
-            
-            return wrappedFunction
-        return wrapped
-
-    def cacheSyncFunction(self,expire:int=None,log:bool=False,count:bool=False)-> None:
-        '''## Decorator for Sync Function to cache in Deta Base.
+    def cache(self,expire:int=None,log:bool=False,count:bool=False) -> None:
+        '''## Decorator to cache locally.
 
         Args:
             expire (int, optional): Sets the expire time to expire in sec . Defaults to `None`.
@@ -124,64 +51,120 @@ class detaCache(object):
             
         Example:
         ```
-            from DetaCache import detaCache
+            from DetaCache import localCache
 
-            app = detaCache('cache.json')
+            app = localCache('cache.json')
 
-            @app.cacheSyncFunction()
-            async def someSyncFunction(url:str):
+            @app.cacheasync()
+            async def function():
                 pass
         ```
         '''
         def wrapped(function):
             
             @wraps(function)
-            def wrappedFunction(*args, **kwargs):
+            async def asyncWrappedFunction(*args, **kwargs):
                 functionArgs = getDecoratorArgs(function,args,kwargs)
-                key = createStringHashKey(f'{function.__name__}{functionArgs}')
-                cached = self.dbCache.get(key=key)
+                key = createIntHashKey(f'{function.__name__}{functionArgs}')
+                cached = self.dbCache.get(doc_id=key)
+                
+                if not cached:
+                    if log:print(f'{function.__name__} with {functionArgs} cache MISS')
+                    _data = await function(*args, **kwargs)
+                    self.dbCache.insert(Document({
+                        'value':_data,
+                        'function':function.__name__,
+                        'Arg':functionArgs,
+                        'called':0,
+                        'expire':expire,
+                        'timestamp':getCurrentTimestamp()
+                        },
+                        doc_id=key))
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
+                    return _data
+                
+                if not cached.get('expire') == expire:
+                    if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
+                    _data = await function(*args, **kwargs)
+                    self.dbCache.update(Document({
+                        'value':_data,
+                        'expire':expire,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':increment('called') if count else cached.get('called')
+                        },
+                        doc_id=key))
+                    if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
+                    return _data
+                
+                if cached.get('expire') and checkExpiredTimestamp(cached.get('expire'),cached.get('timestamp'),getCurrentTimestamp()):
+                    if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
+                    _data = await function(*args, **kwargs)
+                    self.dbCache.update(Document({
+                        'value':_data,
+                        'timestamp':getCurrentTimestamp(),
+                        'called':increment('called') if count else cached.get('called')
+                        },
+                        doc_id=key))
+                    if log:print(f'{function.__name__} with {functionArgs} cached..')
+                    return _data
+                if count:
+                    self.dbCache.update(increment('called'),doc_ids=[key])
+                if log:print(f'{function.__name__} with {functionArgs} cached HIT')
+                return cached.get('value')
+            
+            @wraps(function)
+            def syncWrappedFunction(*args, **kwargs):
+                functionArgs = getDecoratorArgs(function,args,kwargs)
+                key = createIntHashKey(f'{function.__name__}{functionArgs}')
+                cached = self.dbCache.get(doc_id=key)
                 
                 if not cached:
                     if log:print(f'{function.__name__} with {functionArgs} cache MISS')
                     _data = function(*args, **kwargs)
-                    self.dbCache.put(data={
+                    self.dbCache.insert(Document({
                         'value':_data,
                         'function':function.__name__,
                         'Arg':functionArgs,
-                        'expire':expire,
                         'called':0,
+                        'expire':expire,
                         'timestamp':getCurrentTimestamp()
                         },
-                        key=key)
+                        doc_id=key))
                     if log:print(f'{function.__name__} with {functionArgs} cached..')
                     return _data
                 
-                if not cached['expire'] == expire:
+                if not cached.get('expire') == expire:
                     if log:print(f'{function.__name__} with {functionArgs} updating.... expire time')
                     _data = function(*args, **kwargs)
-                    self.dbCache.update(updates={
+                    self.dbCache.update(Document({
                         'value':_data,
                         'expire':expire,
                         'timestamp':getCurrentTimestamp(),
-                        'called':self.dbCache.util.increment(1) if count else cached['called']
-                        },key=key)
+                        'called':increment('called') if count else cached.get('called')
+                        },
+                        doc_id=key))
                     if log:print(f'{function.__name__} with {functionArgs} cached.. and updated expire time')
                     return _data
                 
-                if cached['expire'] and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
+                if cached.get('expire') and checkExpiredTimestamp(cached.get('expire'),cached.get('timestamp'),getCurrentTimestamp()):
                     if log:print(f'{function.__name__} with {functionArgs} cache expired, updating....')
                     _data = function(*args, **kwargs)
-                    self.dbCache.update(updates={
+                    self.dbCache.update(Document({
                         'value':_data,
                         'timestamp':getCurrentTimestamp(),
-                        'called':self.dbCache.util.increment(1) if count else cached['called']
-                        },key=key)
+                        'called':increment('called') if count else cached['called']
+                        },
+                        doc_id=key))
                     if log:print(f'{function.__name__} with {functionArgs} cached..')
                     return _data
                 if count:
-                    self.dbCache.update(updates={'called':self.dbCache.util.increment(1)},key=key)
+                    self.dbCache.update(increment('called'),doc_ids=[key])
                 if log:print(f'{function.__name__} with {functionArgs} cached HIT')
-                return cached['value']
-            
-            return wrappedFunction
+                return cached.get('value')
+
+            if asyncio.iscoroutinefunction(function):
+                return asyncWrappedFunction
+            else:
+                return syncWrappedFunction
         return wrapped
+
