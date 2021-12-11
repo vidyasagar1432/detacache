@@ -2,18 +2,18 @@ import asyncio
 import aiohttp
 import requests
 
-from DetaCache import detaCache
+from detacache import DetaCache
 
 
-app = detaCache(projectKey='projectKey')
+app = DetaCache(projectKey='projectKey')
 
-@app.cacheAsyncFunction()
+@app.cache(expire=60)
 async def asyncgetjSON(url:str):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.json()
 
-@app.cacheSyncFunction()
+@app.cache(expire=30)
 def syncgetjSON(url:str):
     return requests.get(url).json()
 

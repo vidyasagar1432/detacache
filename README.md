@@ -1,11 +1,11 @@
-# [DetaCache](https://github.com/vidyasagar1432/DetaCache)
+# [DetaCache](https://github.com/vidyasagar1432/detacache)
 
 #### Async and Sync Function Decorator to cache function call's to Deta base.
 
 ## Installing
 
 ```bash
-pip3 install DetaCache
+pip3 install detacache
 ```
 
 ## Async and Sync Decorator to cache function
@@ -18,24 +18,15 @@ from DetaCache import detaCache
 
 app = detaCache('projectKey')
 
-@app.cacheAsyncFunction()
+
+@app.cache(expire=30)
 async def asyncgetjSON(url:str):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.json()
 
-@app.cacheSyncFunction()
+@app.cache(expire=30)
 def syncgetjSON(url:str):
-    return requests.get(url).json()
-
-@app.cache()
-async def _asyncgetjSON(url:str):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return await response.json()
-
-@app.cache()
-def _syncgetjSON(url:str):
     return requests.get(url).json()
 
 async def main():

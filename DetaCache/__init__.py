@@ -1,8 +1,8 @@
-from DetaCache._detaCache import detaCache
-from DetaCache._cacheApi import CacheApi
+from detacache._detaCache import DetaCache
+from detacache._cacheApi import CacheApi
 
-__version__ ='v0.0.6'
+__version__ ='v0.0.7'
 __all__=[
-    'detaCache',
+    'DetaCache',
     'CacheApi'
 ]
