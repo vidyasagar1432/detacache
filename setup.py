@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setup(
     name = 'detacache', 
     packages = ['detacache'],
-    version = 'v0.0.7',
+    version = 'v0.0.8',
     license='MIT', 
     description = 'Async and Sync Function Decorator to cache function call\'s to Deta base',
     long_description=long_description,
@@ -18,8 +18,8 @@ setup(
     keywords = ['deta','cache','deta base cache','cache api call','cache functions','cache requests'], 
     install_requires=[
         'deta==1.0.1',
-        'aiohttp==3.8.1'
-        'requests==2.26.0'
+        'aiohttp==3.8.1',
+        'requests==2.26.0',
         ],
     include_package_data=True,
     zip_safe=False,
