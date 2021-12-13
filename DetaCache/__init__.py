@@ -1,8 +1,8 @@
 from detacache._detaCache import DetaCache
-from detacache._cacheApi import CacheApi
-
-__version__ ='v0.0.8'
+from detacache._cacheApi import Aiohttp,Requests
+__version__ ='v0.0.9'
 __all__=[
     'DetaCache',
-    'CacheApi'
+    'Requests',
+    'Aiohttp'
 ]

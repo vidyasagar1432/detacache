@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 setup(
     name = 'detacache', 
     packages = ['detacache'],
-    version = 'v0.0.8',
+    version = 'v0.0.9',
     license='MIT', 
     description = 'Async and Sync Function Decorator to cache function call\'s to Deta base',
     long_description=long_description,

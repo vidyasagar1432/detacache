@@ -1,102 +1,53 @@
 
-from deta import Deta
 import aiohttp
 import requests
+from typing import Any
 
-from ._helpers import getCurrentTimestamp,checkExpiredTimestamp
+from ._detaCache import DetaCache
 
 
-class CacheApi(object):
+class Aiohttp:
     def __init__(self, projectKey: str = None,projectId: str = None,baseName:str='cache'):
-        self.dbCache = Deta(project_key=projectKey,project_id=projectId).Base(baseName)
+        self.app = DetaCache(projectKey=projectKey,projectId=projectId,baseName=baseName)
 
-    def syncGetJson(self,url:str,headers:dict=None,ttl:int=0,log:bool=False):
-        return self.__syncCheckCached(url=url,response='json',headers=headers,expire=ttl,log=log)
-
-    def syncGetText(self,url:str,headers:dict=None,ttl:int=0,log:bool=False):
-        return self.__syncCheckCached(url=url,response='text',headers=headers,expire=ttl,log=log)
-
-    async def asyncGetJson(self,url:str,headers:dict=None,ttl:int=0,log:bool=False):
-        return await self.__asyncCheckCached(url=url,response='json',headers=headers,expire=ttl,log=log)
-
-    async def asyncGetText(self,url:str,headers:dict=None,ttl:int=0,log:bool=False):
-        return await self.__asyncCheckCached(url=url,response='text',headers=headers,expire=ttl,log=log)
-
-    async def __aiohttpFetchJson(self,url:str,headers:dict=None):
-        async with aiohttp.ClientSession(headers=headers) as session:
-            async with session.get(url=url) as response:
-                return await response.json()
-
-    async def __aiohttpFetchText(self,url:str,headers:dict=None):
-        async with aiohttp.ClientSession(headers=headers) as session:
-            async with session.get(url=url) as response:
-                return await response.json()
-
-    def __requestsFetchJson(self,url:str,headers:dict=None):
-        return requests.get(url=url,headers=headers).json()
-
-    def __requestsFetchText(self,url:str,headers:dict=None):
-        return requests.get(url=url,headers=headers).text
+    async def getJson(self,url:str,params:dict=None,ttl:int=0,log:bool=False,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+        @self.app.cache(expire=ttl,log=log)
+        async def __aiohttpGetJson(url:str,params:dict=None,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+            return await self.__aiohttpFetch(url=url,response='json',params=params,allow_redirects=allow_redirects,headers=headers,**kwargs)
+        return await __aiohttpGetJson(url=url,params=params,allow_redirects=allow_redirects,headers=headers,**kwargs)
     
-    async def __asyncCheckCached(self,url:str,response:str,headers:dict,expire:int,log:bool):
-        cached = self.dbCache.get(key=url)
-        if not cached:
-            return self.__dbCacheMISS(
-                await self.__aiohttpFetchText(url,headers) if response == 'text' else await self.__aiohttpFetchJson(url,headers) ,
-                url,expire,log)
-        if not cached['expire'] == expire:
-            return self.__dbUpdateExpireTime(
-                await self.__aiohttpFetchText(url,headers) if response == 'text' else await self.__aiohttpFetchJson(url,headers) ,
-                url,expire,log)
-        if expire and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
-            return self.__dbUpdateCached(
-                await self.__aiohttpFetchText(url,headers) if response == 'text' else await self.__aiohttpFetchJson(url,headers) ,
-                url,log)
-        if log:print('cached HIT')
-        return cached['value']
+    async def getText(self,url:str,params:dict=None,ttl:int=0,log:bool=False,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+        @self.app.cache(expire=ttl,log=log)
+        async def __aiohttpGetText(url:str,params:dict=None,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+            return await self.__aiohttpFetch(url=url,response='test',params=params,allow_redirects=allow_redirects,headers=headers,**kwargs)
+        return await __aiohttpGetText(url=url,params=params,allow_redirects=allow_redirects,headers=headers,**kwargs)
 
-    def __syncCheckCached(self,url:str,response:str,headers:dict,expire:int,log:bool):
-        cached = self.dbCache.get(key=url)
-        if not cached:
-            return self.__dbCacheMISS(
-                self.__requestsFetchText(url,headers) if response == 'text' else self.__requestsFetchJson(url,headers) ,
-                url,expire,log)
-        if not cached['expire'] == expire:
-            return self.__dbUpdateExpireTime(
-                self.__requestsFetchText(url,headers) if response == 'text' else self.__requestsFetchJson(url,headers) ,
-                url,expire,log)
-        if expire and checkExpiredTimestamp(cached['expire'],cached['timestamp'],getCurrentTimestamp()):
-            return self.__dbUpdateCached(
-                self.__requestsFetchText(url,headers) if response == 'text' else self.__requestsFetchJson(url,headers) ,
-                url,log)
-        if log:print('cached HIT')
-        return cached['value']
+    async def __aiohttpFetch(self,response:str,url:str,params:dict=None,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(url,data=params,allow_redirects=allow_redirects, **kwargs) as res:
+                if response == 'json':
+                    return await res.json()
+                return await res.text()
+
+
+class Requests:
+    def __init__(self, projectKey: str = None,projectId: str = None,baseName:str='cache'):
+        self.app = DetaCache(projectKey=projectKey,projectId=projectId,baseName=baseName)
+
+    def getJson(self,url:str,params:dict=None,ttl:int=0,log:bool=False,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+        @self.app.cache(expire=ttl,log=log)
+        def __requestsGetJson(url:str,params:dict=None,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+            return self.__requestsFetch(url=url,response='json',params=params,allow_redirects=allow_redirects,headers=headers,**kwargs)
+        return __requestsGetJson(url=url,params=params,allow_redirects=allow_redirects,headers=headers,**kwargs)
     
-    def __dbCacheMISS(self,data,key:str,expire:int,log:bool):
-        if log:print('cache MISS')
-        self.dbCache.put(data={
-            'value':data,
-            'expire':expire,
-            'timestamp':getCurrentTimestamp()
-            },key=key)
-        if log:print('cached..')
-        return data
+    def getText(self,url:str,params:dict=None,ttl:int=0,log:bool=False,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+        @self.app.cache(expire=ttl,log=log)
+        def __requestsGetText(url:str,params:dict=None,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+            return self.__requestsFetch(url=url,response='test',params=params,allow_redirects=allow_redirects,headers=headers,**kwargs)
+        return __requestsGetText(url=url,params=params,allow_redirects=allow_redirects,headers=headers,**kwargs)
 
-    def __dbUpdateExpireTime(self,data,key:str,expire:int,log:bool):
-        if log:print('updating.... expire time')
-        self.dbCache.update(updates={
-            'value':data,
-            'expire':expire,
-            'timestamp':getCurrentTimestamp(),
-            },key=key)
-        if log:print('cached.. and updated expire time')
-        return data
-
-    def __dbUpdateCached(self,data,key:str,log:bool):
-        if log:print('cache expired, updating....')
-        self.dbCache.update(updates={
-            'value':data,
-            'timestamp':getCurrentTimestamp(),
-            },key=key)
-        if log:print('cached..')
-        return data
+    def __requestsFetch(self,response:str,url:str,params:dict=None,headers:dict=None,allow_redirects: bool = True, **kwargs: Any):
+        res = requests.get(url=url,params=params,headers=headers,allow_redirects=allow_redirects,**kwargs)
+        if response == 'json':
+            return res.json()
+        return res.text

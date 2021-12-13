@@ -5,6 +5,7 @@
 .pypirc
 
 # python
+test.py
 
 __pycache__/
 .venv/

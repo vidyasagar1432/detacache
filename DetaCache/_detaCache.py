@@ -6,7 +6,7 @@ from deta import Deta
 from ._helpers import getDecoratorArgs,createStringHashKey,getCurrentTimestamp,checkExpiredTimestamp
 
 
-class DetaCache(object):
+class DetaCache:
     '''## Create an instance of DetaCache.
     
     Args:
