@@ -1,6 +1,8 @@
 import inspect
 import hashlib
 from datetime import datetime
+from deta import _Base
+from typing import Union
 
 
 def getDecoratorArgs(func, args, kwargs):
@@ -8,19 +10,20 @@ def getDecoratorArgs(func, args, kwargs):
     argspec = inspect.getfullargspec(func)
     data = dict()
     if argspec.args and type(argspec.args is list):
-        for index,arg in enumerate(args) :
-            data.update({str(argspec.args[index]):str(arg)})
+        for index, arg in enumerate(args):
+            data.update({str(argspec.args[index]): str(arg)})
     if kwargs:
         for k, v in kwargs.items():
-            data.update({str(k):str(v)})
+            data.update({str(k): str(v)})
     return data
 
 
-def createIntHashKey(string:str):
+def createIntHashKey(string: str):
     '''Returns a md5 Hash of string as `int`'''
-    return int(hashlib.md5(str(string).encode()).hexdigest(),16)
+    return int(hashlib.md5(str(string).encode()).hexdigest(), 16)
 
-def createStringHashKey(string:str):
+
+def createStringHashKey(string: str):
     '''Returns a md5 Hash of string as `string`'''
     return hashlib.md5(str(string).encode()).hexdigest()
 
@@ -30,6 +33,36 @@ def getCurrentTimestamp():
     return int(round(datetime.now().timestamp()))
 
 
-def checkExpiredTimestamp(expire:int,initialTimestamp:int,currentTimestamp:int):
+def checkExpiredTimestamp(expire: int, initialTimestamp: int, currentTimestamp: int):
     '''Returns `True` if expired else `False`'''
     return initialTimestamp + expire < currentTimestamp
+
+
+async def asyncCheckCached(db: _Base, key: str, expire: int, function, *args, **kwargs):
+    cached = db.get(key=key)
+    if not cached:
+        return putDataIntoDetaCache(await function(*args, **kwargs), db, key, expire)
+    if cached.get('expire') != expire or (expire and checkExpiredTimestamp(cached['expire'], cached['timestamp'], getCurrentTimestamp())):
+        return updateDataIntoDetaCache(await function(*args, **kwargs), db, key, expire)
+    return cached['value']
+
+
+def syncCheckCached(db: _Base, key: str, expire: int, function, *args, **kwargs):
+    cached = db.get(key=key)
+    if not cached:
+        return putDataIntoDetaCache(function(*args, **kwargs), db, key, expire)
+    if cached.get('expire') != expire or (expire and checkExpiredTimestamp(cached['expire'], cached['timestamp'], getCurrentTimestamp())):
+        return updateDataIntoDetaCache(function(*args, **kwargs), db, key, expire)
+    return cached['value']
+
+
+def putDataIntoDetaCache(data: Union[dict, list, str, int, bool], db: _Base, key: str, expire: int):
+    db.put(data={'value': data, 'expire': expire,
+           'timestamp': getCurrentTimestamp(), }, key=key)
+    return data
+
+
+def updateDataIntoDetaCache(data: Union[dict, list, str, int, bool], db: _Base, key: str, expire: int):
+    db.update(updates={'value': data, 'expire': expire,
+              'timestamp': getCurrentTimestamp(), }, key=key)
+    return data
