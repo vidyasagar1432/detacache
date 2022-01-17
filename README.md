@@ -14,7 +14,7 @@ import asyncio
 import aiohttp
 import requests
 
-from DetaCache import detaCache
+from detacache import detaCache
 
 app = detaCache('projectKey')
 

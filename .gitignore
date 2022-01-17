@@ -12,3 +12,4 @@ __pycache__/
 dist/
 build/
 DetaCache.egg-info/
+templates/

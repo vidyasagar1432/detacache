@@ -7,7 +7,7 @@ from ._helpers import *
 
 
 class DetaCache:
-    '''## DetaCache.
+    ''' DetaCache.
 
     Args:
         projectKey (str): Sets the projectKey of Deta .
@@ -38,7 +38,7 @@ class DetaCache:
 
     def __init__(self, projectKey: str = None, projectId: str = None, baseName: str = 'cache'):
         self._dbCache = Deta(project_key=projectKey,
-                             project_id=projectId).Base(baseName)
+                            project_id=projectId).Base(baseName)
 
     def cache(self, expire: int = 0) -> None:
         '''
