@@ -6,6 +6,7 @@
 
 # python
 test.py
+test1.py
 
 __pycache__/
 .venv/
