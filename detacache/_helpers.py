@@ -2,41 +2,34 @@
 import inspect
 import hashlib
 import datetime
-from fastapi import Request
+from starlette.requests import Request
+from starlette.responses import Response
 
+def jsonSerializableArgs(function,args:tuple,kwargs:dict):
+    '''Returns Args and Kwargs of function as `dict`'''
 
-class getDecoratorArgs:
-    def __init__(self, func, args, kwargs):
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-        self.argspec = inspect.getfullargspec(self.func)
+    argspec = inspect.getfullargspec(function)
+    
+    data = {str(argspec.args[index]): str(arg) if isinstance(arg,
+            (dict, list,tuple,set, str, int, bool)) else None for index, arg in enumerate(args)
+            if argspec.args and type(argspec.args is list)}
 
-    def jsonSerializableArgs(self):
-        '''Returns Args and Kwargs of function as `dict`'''
+    data.update({str(k): str(v) if isinstance(v, (dict, list,tuple,set, str, int, bool))
+                    else None for k, v in kwargs.items() if kwargs})
 
-        data = {str(self.argspec.args[index]): str(arg) if isinstance(arg,
-                (dict, list, str, int, bool)) else None for index, arg in
-                enumerate(self.args) if self.argspec.args and type(self.argspec.args is list)}
+    return data
 
-        data.update({str(k): str(v) if isinstance(v, (dict, list, str, int, bool))
-                    else None for k, v in self.kwargs.items() if self.kwargs})
+def fastapiKeyGen(function,args:tuple,kwargs:dict,):
+    '''Returns Args and Kwargs of function as `dict`'''
 
-        return data
+    request = kwargs.get('request')
 
-    def fastapiArgs(self):
-        '''Returns Args and Kwargs of function as `dict`'''
+    assert request, f"function {function.__name__} needs a `request` argument"
 
-        data = {str(self.argspec.args[index]): str(arg) if isinstance(arg,
-                (dict, list, str, int, bool)) else str(arg.url) if isinstance(
-                    arg, Request) else None for index, arg in enumerate(self.args)
-                if self.argspec.args and type(self.argspec.args is list)}
-
-        data.update({str(k): str(v) if isinstance(v, (dict, list, str, int, bool))
-                     else str(v.url) if isinstance(v, Request) else None
-                     for k, v in self.kwargs.items() if self.kwargs})
-
-        return data
+    if not isinstance(request,Request):
+        raise Exception("`request` must be an instance of  starlette.request.Request")
+    
+    return createStringHashKey(f'{function.__name__}{request.url}')
 
 
 def createIntHashKey(string: str):
