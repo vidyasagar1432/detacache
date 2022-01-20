@@ -1,3 +1,4 @@
+
 import deta
 import asyncio
 from functools import wraps
@@ -8,8 +9,9 @@ from ._helpers import *
 
 logger = logging.getLogger(__name__)
 
+
 class BaseCache:
-    def __init__(self, db: deta._Base,key:str, expire: int, function, *args, **kwargs):
+    def __init__(self, db: deta._Base, key: str, expire: int, function, *args, **kwargs):
         self.db = db
         self.key = key
         self.expire = expire
@@ -19,11 +21,13 @@ class BaseCache:
         self.cached = self.db.get(key=self.key)
 
     def _checkIfExpired(self):
-        self._newExpire = self.cached.get('expire') != self.expire
-        self._expired = self.expire and checkExpiredTimestamp(
-                    self.cached.get('expire'), self.cached.get('timestamp'), getCurrentTimestamp())
-        self.expired = self._newExpire or self._expired
-        return self.expired
+        if _expired:=self.cached.get('expire') != self.expire:
+            logger.info(f'{self.function.__name__} function cache expire..') 
+        if _newExpire:=self.expire and checkExpiredTimestamp(
+            self.cached.get('expire'), self.cached.get('timestamp'), getCurrentTimestamp()):
+            logger.info(
+                f'{self.function.__name__} function updating.... expire time')
+        return _newExpire or _expired
 
     async def _asyncFunctionCallAndPutResponseInDetaCache(self):
         self.fucResponse = await self.function(*self.args, **self.kwargs)
@@ -32,26 +36,23 @@ class BaseCache:
     def _syncFunctionCallAndPutResponseInDetaCache(self):
         self.fucResponse = self.function(*self.args, **self.kwargs)
         return self._putDataInDetaCache()
-    
+
     def _putDataInDetaCache(self):
         self.db.put(data={
             'value': self.serialize(),
-            'type':type(self.fucResponse).__name__,
-            'response':self.response,
-            'expire': self.expire, 
+            'type': type(self.fucResponse).__name__,
+            'response': self.response,
+            'expire': self.expire,
             'timestamp': getCurrentTimestamp()
-            }, 
-            key=self.key)
-        if self._expired: logger.info(f'{self.function.__name__} function cache expire..')
-        if self._newExpire: logger.info(f'{self.function.__name__} function updating.... expire time')
+        },key=self.key)
         logger.info(f'{self.function.__name__} function cached..')
         return self.fucResponse
 
     def deserialize(self):
         return self.cached.get('value')
-    
+
     def serialize(self):
-        if isinstance(self.fucResponse,(dict, list,tuple,set, str, int, bool)):
+        if isinstance(self.fucResponse, (dict, list, tuple,set, str, int, bool)):
             self.response = 'json'
             return self.fucResponse
         else:
@@ -83,7 +84,7 @@ class BaseDecorator:
             async def asyncWrappedFunction(*args, **kwargs):
                 return await self.cacheClass(
                     self._dbCache,
-                    self.key(function,args,kwargs),
+                    self.key(function, args, kwargs),
                     expire,
                     function,
                     *args,
@@ -94,7 +95,7 @@ class BaseDecorator:
             def syncWrappedFunction(*args, **kwargs):
                 return self.cacheClass(
                     self._dbCache,
-                    self.key(function,args,kwargs),
+                    self.key(function, args, kwargs),
                     expire,
                     function,
                     *args,
@@ -106,5 +107,4 @@ class BaseDecorator:
             else:
                 return syncWrappedFunction
         return wrapped
-
 

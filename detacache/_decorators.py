@@ -1,12 +1,12 @@
 
-from ._cache import starletteCache ,jsonCache
+from ._cache import starletteCache ,detaCache
 from ._helpers import jsonKeyGen, starletteKeyGen
 from ._base import BaseDecorator
 
-class JsonCache(BaseDecorator):
+class DetaCache(BaseDecorator):
     def __init__(self, projectKey: str = None, projectId: str = None, baseName: str = 'cache'):
         super().__init__(projectKey, projectId, baseName)
-        self.cacheClass = jsonCache
+        self.cacheClass = detaCache
         self.key = jsonKeyGen
 
 

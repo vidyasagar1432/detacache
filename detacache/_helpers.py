@@ -7,6 +7,13 @@ from starlette.requests import Request
 
 
 logger = logging.getLogger('detacache')
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler(sys.stderr)
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter(  
+           '%(levelname)s:%(module)s:%(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 
@@ -28,11 +35,11 @@ def starletteKeyGen(function,args:tuple,kwargs:dict,):
     '''Returns a deta cache key'''
 
     request = kwargs.get('request')
-
+    
     assert request, f"function {function.__name__} needs a `request` argument"
 
     if not isinstance(request,Request):
-        raise Exception("`request` must be an instance of  starlette.request.Request")
+        raise Exception("`request` must be an instance of `starlette.request.Request`")
     
     return createStringHashKey(f'{function.__name__}{request.url}')
 
