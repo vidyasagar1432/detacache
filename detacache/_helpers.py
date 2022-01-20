@@ -2,11 +2,16 @@
 import inspect
 import hashlib
 import datetime
+import logging,sys
 from starlette.requests import Request
-from starlette.responses import Response
 
-def jsonSerializableArgs(function,args:tuple,kwargs:dict):
-    '''Returns Args and Kwargs of function as `dict`'''
+
+logger = logging.getLogger('detacache')
+
+
+
+def jsonKeyGen(function,args:tuple,kwargs:dict):
+    '''Returns a deta cache key'''
 
     argspec = inspect.getfullargspec(function)
     
@@ -16,11 +21,11 @@ def jsonSerializableArgs(function,args:tuple,kwargs:dict):
 
     data.update({str(k): str(v) if isinstance(v, (dict, list,tuple,set, str, int, bool))
                     else None for k, v in kwargs.items() if kwargs})
+    
+    return createStringHashKey(f'{function.__name__}{data}')
 
-    return data
-
-def fastapiKeyGen(function,args:tuple,kwargs:dict,):
-    '''Returns Args and Kwargs of function as `dict`'''
+def starletteKeyGen(function,args:tuple,kwargs:dict,):
+    '''Returns a deta cache key'''
 
     request = kwargs.get('request')
 
