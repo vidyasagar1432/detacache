@@ -21,10 +21,10 @@ class BaseCache:
         self.cached = self.db.get(key=self.key)
 
     def _checkIfExpired(self):
-        if _expired:=self.cached.get('expire') != self.expire:
-            logger.info(f'{self.function.__name__} function cache expire..') 
-        if _newExpire:=self.expire and checkExpiredTimestamp(
-            self.cached.get('expire'), self.cached.get('timestamp'), getCurrentTimestamp()):
+        if _expired := self.cached.get('expire') != self.expire:
+            logger.info(f'{self.function.__name__} function cache expire..')
+        if _newExpire := self.expire and checkExpiredTimestamp(
+                self.cached.get('expire'), self.cached.get('timestamp'), getCurrentTimestamp()):
             logger.info(
                 f'{self.function.__name__} function updating.... expire time')
         return _newExpire or _expired
@@ -44,7 +44,7 @@ class BaseCache:
             'response': self.response,
             'expire': self.expire,
             'timestamp': getCurrentTimestamp()
-        },key=self.key)
+        }, key=self.key)
         logger.info(f'{self.function.__name__} function cached..')
         return self.fucResponse
 
@@ -52,7 +52,7 @@ class BaseCache:
         return self.cached.get('value')
 
     def serialize(self):
-        if isinstance(self.fucResponse, (dict, list, tuple,set, str, int, bool)):
+        if isinstance(self.fucResponse, (dict, list, tuple, set, str, int, bool)):
             self.response = 'json'
             return self.fucResponse
         else:
@@ -70,10 +70,11 @@ class BaseCache:
         logger.info(f'{self.function.__name__} function cached HIT')
         return self.deserialize()
 
+
 class BaseDecorator:
 
     def __init__(self, projectKey: str = None, projectId: str = None, baseName: str = 'cache'):
-        self._dbCache = Deta(project_key=projectKey,project_id=projectId).Base(baseName)
+        self._dbCache = Deta(projectKey, project_id=projectId).Base(baseName)
         self.cacheClass = None
         self.key = None
 
@@ -107,4 +108,3 @@ class BaseDecorator:
             else:
                 return syncWrappedFunction
         return wrapped
-

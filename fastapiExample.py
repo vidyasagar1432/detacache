@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse,PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from detacache import FastAPICache
 
 import logging
@@ -13,7 +13,7 @@ app = FastAPI()
 
 # templates = Jinja2Templates(directory='templates')
 
-Cache = FastAPICache(projectKey='c0reypnf_MSMvWY1BqNaDFgAvsPe9YJ9nqPiKNt9Z')
+Cache = FastAPICache(projectKey='projectKey')
 
 
 # @app.get('/t-html')
@@ -23,7 +23,7 @@ Cache = FastAPICache(projectKey='c0reypnf_MSMvWY1BqNaDFgAvsPe9YJ9nqPiKNt9Z')
 
 @app.get('/html')
 @Cache.cache(expire=10)
-def htmlResponse(request:Request):
+def htmlResponse(request: Request):
     return HTMLResponse('''
         <!DOCTYPE HTML>
         <html lang="en-US">
@@ -60,50 +60,70 @@ def htmlResponse(request:Request):
         </html>
         ''')
 
-@app.get('/json')
+
+@app.get('/dict')
 @Cache.cache(expire=10)
-def json(request:Request):
+def dictResponse(request: Request):
     return {
         "slideshow": {
             "author": "Yours Truly",
             "date": "date of publication",
             "slides": [
-            {
-                "title": "Wake up to WonderWidgets!",
-                "type": "all"
-            },
-            {
-                "items": [
-                "Why <em>WonderWidgets</em> are great",
-                "Who <em>buys</em> WonderWidgets"
-                ],
-                "title": "Overview",
-                "type": "all"
-            }
+                {
+                    "title": "Wake up to WonderWidgets!",
+                    "type": "all"
+                },
+                {
+                    "items": [
+                        "Why <em>WonderWidgets</em> are great",
+                        "Who <em>buys</em> WonderWidgets"
+                    ],
+                    "title": "Overview",
+                    "type": "all"
+                }
             ],
             "title": "Sample Slide Show"
         }
-        }
+    }
+
 
 @app.get('/text')
 @Cache.cache(expire=10)
-def textResponse(request:Request):
+def textResponse(request: Request):
     return PlainTextResponse('detacache')
 
+
 @app.get('/str')
-@Cache.cache(expire=10)
-def strResponse(request:Request):
+@Cache.cache(expire=1)
+async def strResponse(request: Request):
     return 'fastapi detacache'
 
 
 @app.get('/tuple')
 @Cache.cache(expire=10)
-def tupleResponse(request:Request):
-    return ('fastapi','detacache')
+def tupleResponse(request: Request):
+    return ('fastapi', 'detacache')
 
-@app.get('/set')
+
+@app.get('/list')
 @Cache.cache(expire=10)
-def setResponse(request:Request):
-    return {'fastapi','detacache'}
+def tupleResponse(request: Request):
+    return ['fastapi', 'detacache']
 
 
+@app.get('/int')
+@Cache.cache(expire=10)
+def intResponse(request: Request):
+    return 10
+
+
+@app.get('/float')
+@Cache.cache(expire=10)
+def floatResponse(request: Request):
+    return 1.5
+
+
+@app.get('/bool')
+@Cache.cache(expire=10)
+def boolResponse(request: Request):
+    return True
