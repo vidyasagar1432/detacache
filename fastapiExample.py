@@ -110,6 +110,11 @@ def tupleResponse(request: Request):
 def tupleResponse(request: Request):
     return ['fastapi', 'detacache']
 
+@app.get('/set')
+@Cache.cache(expire=10)
+def setResponse(request: Request):
+    return {'fastapi', 'detacache'}
+
 
 @app.get('/int')
 @Cache.cache(expire=10)
