@@ -1,9 +1,8 @@
-from detacache._detaCache import DetaCache
+from detacache.core._decorators import DetaCache, FastAPICache,JsonCache
 
 
-__version__ = 'v0.1.0'
 __all__ = [
     'DetaCache',
-    'Requests',
-    'Aiohttp'
+    'FastAPICache',
+    'JsonCache'
 ]

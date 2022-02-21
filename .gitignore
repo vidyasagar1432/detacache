@@ -6,9 +6,13 @@
 
 # python
 test.py
+test1.py
+fastapiExample.py
+example.py
 
 __pycache__/
 .venv/
 dist/
 build/
 DetaCache.egg-info/
+templates/

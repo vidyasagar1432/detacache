@@ -1,49 +1,4 @@
-# [DetaCache](https://github.com/vidyasagar1432/detacache)
 
-#### Async and Sync Function Decorator to cache function call's to Deta base.
-
-## Installing
-
-```bash
-pip3 install detacache
-```
-
-## Async and Sync Decorator to cache function
-```python
-import asyncio
-import aiohttp
-import requests
-
-from detacache import detaCache
-
-app = detaCache('projectKey')
-
-
-@app.cache(expire=30)
-async def asyncgetjSON(url:str):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return await response.json()
-
-@app.cache(expire=30)
-def syncgetjSON(url:str):
-    return requests.get(url).json()
-
-async def main():
-    asyncdata = await asyncgetjSON('https://httpbin.org/json')
-    print(asyncdata)
-    syncdata = syncgetjSON('https://httpbin.org/json')
-    print(syncdata)
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
-```
-
-## FastAPI Decorator to cache function
-
-#### you can use `cache` method as decorator between router decorator and view function and must pass `request` as param of view function.
-
-```python
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, PlainTextResponse
@@ -53,20 +8,21 @@ import logging
 
 logger = logging.getLogger("detacache")
 
+
 app = FastAPI()
 
-templates = Jinja2Templates(directory='templates')
+# templates = Jinja2Templates(directory='templates')
 
-deta = FastAPICache(projectKey='projectKey')
+Cache = FastAPICache(projectKey='projectKey')
 
 
-@app.get('/t-html')
-@deta.cache(expire=10)
-def templateResponse(request:Request):
-    return templates.TemplateResponse('home.html',context={'request':request})
+# @app.get('/t-html')
+# @Cache.cache(expire=10)
+# def templateResponse(request:Request):
+#     return templates.TemplateResponse('home.html',context={'request':request})
 
 @app.get('/html')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def htmlResponse(request: Request):
     return HTMLResponse('''
         <!DOCTYPE HTML>
@@ -106,7 +62,7 @@ def htmlResponse(request: Request):
 
 
 @app.get('/dict')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def dictResponse(request: Request):
     return {
         "slideshow": {
@@ -132,54 +88,47 @@ def dictResponse(request: Request):
 
 
 @app.get('/text')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def textResponse(request: Request):
     return PlainTextResponse('detacache')
 
 
 @app.get('/str')
-@deta.cache(expire=20)
+@Cache.cache(expire=20)
 async def strResponse(request: Request):
     return 'fastapi detacache'
 
 
 @app.get('/tuple')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def tupleResponse(request: Request):
     return ('fastapi', 'detacache')
 
 
 @app.get('/list')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def tupleResponse(request: Request):
     return ['fastapi', 'detacache']
 
 @app.get('/set')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def setResponse(request: Request):
     return {'fastapi', 'detacache'}
 
 
 @app.get('/int')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def intResponse(request: Request):
     return 10
 
 
 @app.get('/float')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def floatResponse(request: Request):
     return 1.5
 
 
 @app.get('/bool')
-@deta.cache(expire=10)
+@Cache.cache(expire=10)
 def boolResponse(request: Request):
     return True
-
-```
-## License
-
-MIT License
-
-Copyright (c) 2021 [Vidya Sagar](https://github.com/vidyasagar1432)

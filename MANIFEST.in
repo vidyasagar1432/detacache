@@ -1,2 +1,2 @@
 include README.md
-recursive-include DetaCache *.py
+recursive-include detacache *.py
