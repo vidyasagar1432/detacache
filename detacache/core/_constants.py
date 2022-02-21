@@ -1,5 +1,5 @@
 
-from starlette.responses import HTMLResponse, PlainTextResponse, Response
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 
 JSON_CONVERTERS = {
     "dict": lambda x: dict(x),

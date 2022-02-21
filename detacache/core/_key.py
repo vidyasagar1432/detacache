@@ -1,6 +1,6 @@
 
 import inspect
-from starlette.requests import Request
+from fastapi.requests import Request
 
 from ._helpers import createStringHashKey
 

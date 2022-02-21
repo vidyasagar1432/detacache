@@ -7,6 +7,8 @@
 # python
 test.py
 test1.py
+fastapiExample.py
+example.py
 
 __pycache__/
 .venv/

@@ -19,7 +19,7 @@ Cache = FastAPICache(projectKey='projectKey')
 # @app.get('/t-html')
 # @Cache.cache(expire=10)
 # def templateResponse(request:Request):
-#     return templates.TemplateResponse('get.html',context={'request':request})
+#     return templates.TemplateResponse('home.html',context={'request':request})
 
 @app.get('/html')
 @Cache.cache(expire=10)

@@ -59,6 +59,3 @@ class AsyncBase(DetaBase):
                 _res = await resp.json()
                 return _res if len(_res) > 1 else None
 
-
-
-
