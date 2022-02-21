@@ -94,7 +94,7 @@ def textResponse(request: Request):
 
 
 @app.get('/str')
-@Cache.cache(expire=1)
+@Cache.cache(expire=20)
 async def strResponse(request: Request):
     return 'fastapi detacache'
 

@@ -4,10 +4,10 @@ import pickle
 from typing import Any
 from fastapi.encoders import jsonable_encoder
 
-from .._constants import JSON_CONVERTERS,FASTAPI_CONVERTERS
+from ._constants import JSON_CONVERTERS,FASTAPI_CONVERTERS
 
 
-class BaseCoder:
+class Coder:
     @classmethod
     def encode(cls, value: Any):
         raise NotImplementedError
@@ -17,7 +17,7 @@ class BaseCoder:
         raise NotImplementedError
 
 
-class JsonCoder(BaseCoder):
+class JsonCoder(Coder):
     @classmethod
     def encode(cls, value: Any):
         return json.dumps(value)
@@ -27,7 +27,7 @@ class JsonCoder(BaseCoder):
         return json.loads(value)
 
 
-class PickleCoder(BaseCoder):
+class PickleCoder(Coder):
     @classmethod
     def encode(cls, value: Any):
         return pickle.dumps(value)
@@ -47,7 +47,7 @@ def objDecode(value,con):
     else:
         raise TypeError("Unknown {}".format(_type))
 
-class DetaCoder(BaseCoder):
+class DetaCoder(Coder):
     '''(dict, list, tuple, set, float, str, int, bool)'''
     @classmethod
     def encode(cls, value: Any):
@@ -64,7 +64,7 @@ class DetaCoder(BaseCoder):
         return objDecode(value,JSON_CONVERTERS)
 
 
-class FastAPICoder(BaseCoder):
+class FastAPICoder(Coder):
     @classmethod
     def encode(cls, value: Any):
         return jsonable_encoder(value)

@@ -3,8 +3,6 @@ import aiohttp
 import requests
 
 from detacache import DetaCache
-from detacache.coder import DetaCoder
-from detacache.cache import fastAPICache
 import logging
 
 logger = logging.getLogger("detacache")
@@ -35,23 +33,17 @@ def syncgetJson(url: str):
 def syncgetText(url: str):
     return requests.get(url).text
 
-@app.cache(expire=10)
-def test():
-    return {'aaaaaaaaaaaaa','bbbbbbbbbbb'}
-
 
 async def main():
-    # print(test())
     asyncJsonData = await asyncgetJson('https://httpbin.org/json')
-    # print(asyncJsonData)
-    # syncJsonData = syncgetJson('https://httpbin.org/json')
-    # print(syncJsonData)
+    print(asyncJsonData)
+    syncJsonData = syncgetJson('https://httpbin.org/json')
+    print(syncJsonData)
     asyncTextData = await asyncgetText('https://httpbin.org/html')
-    # print(asyncTextData)
-    # syncTextData = syncgetText('https://httpbin.org/html')
-    # print(syncTextData)
+    print(asyncTextData)
+    syncTextData = syncgetText('https://httpbin.org/html')
+    print(syncTextData)
 
-print(test())
 
-# loop = asyncio.get_event_loop()
-# loop.run_until_complete(main())
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())

@@ -2,16 +2,16 @@
 import inspect
 from starlette.requests import Request
 
-from .._helpers import createStringHashKey
+from ._helpers import createStringHashKey
 
 
-class BaseKeyGen:
+class KeyGen:
     @classmethod
     def get(cls, function, args: tuple, kwargs: dict) -> str:
         raise NotImplementedError
 
 
-class JsonKeyGen(BaseKeyGen):
+class JsonKeyGen(KeyGen):
     @classmethod
     def get(cls,function, args: tuple, kwargs: dict):
         '''Returns a deta cache key'''
@@ -27,7 +27,10 @@ class JsonKeyGen(BaseKeyGen):
         
         return createStringHashKey(f'{function.__name__}{data}')
 
-class FastAPIKeyGen(BaseKeyGen):
+class DetaKeyGen(JsonKeyGen):
+    pass
+
+class FastAPIKeyGen(KeyGen):
     @classmethod
     def get(cls,function, args: tuple, kwargs: dict,):
         '''Returns a deta cache key'''

@@ -34,5 +34,3 @@ def checkExpiredTimestamp(expire: int, initialTimestamp: int, currentTimestamp: 
     '''Returns `True` if expired else `False`'''
     return initialTimestamp + expire < currentTimestamp
 
-
-
