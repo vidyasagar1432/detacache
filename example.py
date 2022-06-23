@@ -3,9 +3,7 @@ import aiohttp
 import requests
 
 from detacache import DetaCache
-import logging
 
-logger = logging.getLogger("detacache")
 
 app = DetaCache(projectKey='projectKey')
 

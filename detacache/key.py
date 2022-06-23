@@ -1,8 +1,5 @@
-from .core._key import KeyGen,DetaKeyGen,JsonKeyGen,FastAPIKeyGen
+from .core._key import detaKeyGen
 
 __all__ = [
-    'KeyGen',
-    'DetaKeyGen',
-    'JsonKeyGen',
-    'FastAPIKeyGen',
+    'detaKeyGen',
 ]

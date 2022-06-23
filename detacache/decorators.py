@@ -1,8 +1,6 @@
-from .core._decorators import BaseDecorator,DetaCache,JsonCache,FastAPICache
+from .core._decorators import BaseDecorator,DetaCache
 
 __all__ = [
     'BaseDecorator',
     'DetaCache',
-    'JsonCache',
-    'FastAPICache',
 ]

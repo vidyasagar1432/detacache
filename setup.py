@@ -19,8 +19,7 @@ setup(
               'cache api call', 'cache functions', 'cache requests'],
     install_requires=[
         'aiohttp==3.8.1',
-        'requests==2.26.0',
-        'fastapi==0.74.0'
+        'requests==2.28.0',
     ],
     include_package_data=True,
     zip_safe=False,
