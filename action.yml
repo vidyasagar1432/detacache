@@ -1,2 +1,0 @@
-- name: PyPI Deployment
-  uses: casperdcl/deploy-pypi@v2.2.1
