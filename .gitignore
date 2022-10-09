@@ -5,6 +5,8 @@
 .pypirc
 
 # python
+starletteTest.py
+fastTest.py
 test.py
 test1.py
 fastapiExample.py

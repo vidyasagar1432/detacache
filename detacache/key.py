@@ -1,5 +1,7 @@
-from .core._key import detaKeyGen
+from .core._key import DetaKey,FastAPIKey,StarletteKey
 
 __all__ = [
-    'detaKeyGen',
+    'DetaKey',
+    'FastAPIKey',
+    'StarletteKey'
 ]
