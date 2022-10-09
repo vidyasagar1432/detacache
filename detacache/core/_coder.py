@@ -1,11 +1,5 @@
 
-import json
-import pickle
 from typing import Any
-from fastapi.encoders import jsonable_encoder
-
-from ._constants import JSON_CONVERTERS,FASTAPI_CONVERTERS
-
 
 class Coder:
     @classmethod
@@ -17,25 +11,16 @@ class Coder:
         raise NotImplementedError
 
 
-class JsonCoder(Coder):
-    @classmethod
-    def encode(cls, value: Any):
-        return json.dumps(value)
-
-    @classmethod
-    def decode(cls, value: Any):
-        return json.loads(value)
-
-
-class PickleCoder(Coder):
-    @classmethod
-    def encode(cls, value: Any):
-        return pickle.dumps(value)
-
-    @classmethod
-    def decode(cls, value: Any):
-        return pickle.loads(value)
-
+JSON_CONVERTERS = {
+    "dict": lambda x: dict(x),
+    "list": lambda x: list(x),
+    "tuple": lambda x: tuple(x),
+    "float": lambda x: float(x),
+    "set": lambda x: set(x),
+    "str": lambda x: str(x),
+    "int": lambda x: int(x),
+    "bool": lambda x: bool(x),
+}
 
 def objDecode(value,con):
     _type = value.get("type")
@@ -47,8 +32,10 @@ def objDecode(value,con):
     else:
         raise TypeError("Unknown {}".format(_type))
 
+
 class DetaCoder(Coder):
     '''(dict, list, tuple, set, float, str, int, bool)'''
+    
     @classmethod
     def encode(cls, value: Any):
         if isinstance(value, (dict, list, float, str, int, bool)):
@@ -63,14 +50,41 @@ class DetaCoder(Coder):
     def decode(cls, value: Any):
         return objDecode(value,JSON_CONVERTERS)
 
+try:
+    import fastapi
+    from fastapi.encoders import jsonable_encoder
+    from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, Response
+except ImportError: 
+    fastapi = None 
+
+
+
+def fastAPIdecode():
+    _FASTAPIHTML = lambda x: HTMLResponse(str(x['body']), headers=dict(x['raw_headers']), status_code=x['status_code'])
+    FASTAPI_CONVERTERS = {
+        "_TemplateResponse":_FASTAPIHTML,
+        "HTMLResponse": _FASTAPIHTML,
+        "JSONResponse":lambda x: JSONResponse(str(x['body']), headers=dict(x['raw_headers']), status_code=x['status_code']),
+        "PlainTextResponse": lambda x: PlainTextResponse(str(x['body']), headers=dict(x['raw_headers']), status_code=x['status_code']),
+        "Response": lambda x: Response(str(x['body']), headers=dict(x['raw_headers']), status_code=x['status_code']),
+    }
+    FASTAPI_CONVERTERS.update(JSON_CONVERTERS)
+    return FASTAPI_CONVERTERS
+
+
+
 
 class FastAPICoder(Coder):
+    
     @classmethod
     def encode(cls, value: Any):
+        assert fastapi is not None, "fastapi must be installed to use FastAPICoder.encode"
         return jsonable_encoder(value)
 
     @classmethod
     def decode(cls, value: Any):
-        return objDecode(value,FASTAPI_CONVERTERS)
+        assert fastapi is not None, "fastapi must be installed to use FastAPICoder.decode"
+        return objDecode(value,fastAPIdecode())
 
-
+class StarletteCoder(FastAPICoder):
+    pass

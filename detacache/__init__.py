@@ -1,10 +1,12 @@
-from detacache.core._decorators import DetaCache, FastAPICache,JsonCache
+from detacache.core._decorators import DetaCache,BaseDecorator,FastAPICache,StarletteCache
 
 
-__version__ = 'v0.1.1'
+__version__ = 'v0.1.2'
 
 __all__ = [
+    'BaseDecorator',
     'DetaCache',
     'FastAPICache',
-    'JsonCache'
+    'StarletteCache'
 ]
+

@@ -1,19 +1,20 @@
 
 import inspect
-from fastapi.requests import Request
+import typing
 
 from ._helpers import createStringHashKey
 
-
-class KeyGen:
+class KeyGenerator:
+    
     @classmethod
-    def get(cls, function, args: tuple, kwargs: dict) -> str:
+    def generate(cls, function:typing.Callable, args: tuple, kwargs: dict) -> str:
         raise NotImplementedError
 
 
-class JsonKeyGen(KeyGen):
+
+class DetaKey(KeyGenerator):
     @classmethod
-    def get(cls,function, args: tuple, kwargs: dict):
+    def generate(cls,function:typing.Callable, args: tuple, kwargs: dict):
         '''Returns a deta cache key'''
 
         argspec = inspect.getfullargspec(function)
@@ -24,23 +25,57 @@ class JsonKeyGen(KeyGen):
 
         data.update({str(k): str(v) if isinstance(v, (dict, list, tuple, set, str, int, bool))
                     else None for k, v in kwargs.items() if kwargs})
-        
+
         return createStringHashKey(f'{function.__name__}{data}')
 
-class DetaKeyGen(JsonKeyGen):
-    pass
+try:
+    import fastapi
+    from fastapi.requests import Request
+except ImportError: 
+    fastapi = None 
 
-class FastAPIKeyGen(KeyGen):
+class FastAPIKey(KeyGenerator):
+
     @classmethod
-    def get(cls,function, args: tuple, kwargs: dict,):
+    def generate(cls,function:typing.Callable, args: tuple, kwargs: dict,):
         '''Returns a deta cache key'''
+
+        assert fastapi is not None, "fastapi must be installed to use FastAPIKey"
 
         request = kwargs.get('request')
 
         assert request, f"function {function.__name__} needs a `request` argument"
 
         if not isinstance(request, Request):
-            raise Exception(
-                "`request` must be an instance of `starlette.request.Request`")
+            raise Exception("`request` must be an instance of `fastapi.request.Request`")
+
+        return createStringHashKey(f'{function.__name__}{request.url}')
+
+try:
+    import starlette
+    from starlette.requests import Request
+except ImportError: 
+    starlette = None 
+
+
+class StarletteKey(KeyGenerator):
+
+    @classmethod
+    def generate(cls,function:typing.Callable, args: tuple, kwargs: dict,):
+        '''Returns a deta cache key'''
+
+        assert starlette is not None, "starlette must be installed to use StarletteKey"
+
+        request  =None
+        
+        for i in args:
+            if isinstance(i, Request):
+                request = i
+                break
+
+        assert request, f"function {function.__name__} needs a `request` argument"
+
+        if not isinstance(request, Request):
+            raise Exception("`request` must be an instance of `starlette.request.Request`")
 
         return createStringHashKey(f'{function.__name__}{request.url}')

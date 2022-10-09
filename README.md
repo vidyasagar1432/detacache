@@ -5,7 +5,7 @@
 ## Installing
 
 ```bash
-pip3 install detacache
+pip install detacache
 ```
 
 ## Async and Sync Decorator to cache function
@@ -14,7 +14,7 @@ import asyncio
 import aiohttp
 import requests
 
-from detacache import detaCache
+from detacache import DetaCache
 
 app = detaCache('projectKey')
 
@@ -48,10 +48,6 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from detacache import FastAPICache
-
-import logging
-
-logger = logging.getLogger("detacache")
 
 app = FastAPI()
 
@@ -177,6 +173,161 @@ def floatResponse(request: Request):
 def boolResponse(request: Request):
     return True
 
+```
+
+## starlette Decorator to cache function
+
+#### you can use `cache` method as decorator and must pass `request` as param of view function.
+
+```python
+from starlette.applications import Starlette
+from starlette.responses import HTMLResponse, PlainTextResponse, JSONResponse
+from starlette.routing import Route
+from starlette.requests import Request
+
+from detacache import StarletteCache
+
+
+deta = StarletteCache(projectKey='projectKey')
+
+
+
+@deta.cache(expire=30)
+def dictResponse(request: Request):
+    return JSONResponse({
+        "slideshow": {
+            "author": "Yours Truly",
+            "date": "date of publication",
+            "slides": [
+                {
+                    "title": "Wake up to WonderWidgets!",
+                    "type": "all"
+                },
+                {
+                    "items": [
+                        "Why <em>WonderWidgets</em> are great",
+                        "Who <em>buys</em> WonderWidgets"
+                    ],
+                    "title": "Overview",
+                    "type": "all"
+                }
+            ],
+            "title": "Sample Slide Show"
+        }
+    })
+
+@deta.cache(expire=20)
+async def strResponse(request: Request):
+    return JSONResponse('fastapi detacache') 
+
+@deta.cache(expire=10)
+def tupleResponse(request: Request):
+    return JSONResponse(('fastapi', 'detacache'))
+
+@deta.cache(expire=10)
+def listResponse(req):
+    print(req.url)
+    return JSONResponse(['fastapi', 'detacache'])
+
+@deta.cache(expire=10)
+def setResponse(request: Request):
+    return JSONResponse({'fastapi', 'detacache'})
+
+@deta.cache(expire=10)
+def intResponse(request: Request):
+    return JSONResponse(10)
+
+@deta.cache(expire=10)
+def floatResponse(request: Request):
+    return JSONResponse(1.5)
+
+@deta.cache(expire=10)
+def boolResponse(request: Request):
+    return JSONResponse(True)
+
+@deta.cache(expire=10)
+def jsonResponse(request: Request):
+    return JSONResponse({
+        "slideshow": {
+            "author": "Yours Truly",
+            "date": "date of publication",
+            "slides": [
+                {
+                    "title": "Wake up to WonderWidgets!",
+                    "type": "all"
+                },
+                {
+                    "items": [
+                        "Why <em>WonderWidgets</em> are great",
+                        "Who <em>buys</em> WonderWidgets"
+                    ],
+                    "title": "Overview",
+                    "type": "all"
+                }
+            ],
+            "title": "Sample Slide Show"
+        }
+    }
+)
+
+@deta.cache(expire=30)
+def htmlResponse(request: Request):
+    return HTMLResponse('''
+        <!DOCTYPE HTML>
+        <html lang="en-US">
+        <head>
+            <meta charset="UTF-8">
+            <title>My Pimpin Website</title>
+            <meta name="description" content="A sample website, nothin fancy">
+            <meta http-equiv="author" content="Francisco Campos Arias">
+            <meta name="keywords" content="html, css, web, design, sample, practice">
+        </head>
+        <body>
+            <div class="container">
+            <header>
+                <div class="header">
+                    <h1>{{ data }}</h1>
+                </div>
+            </header>
+                <div class="main">
+                    <h2>This is just an example with some web content. This is the Hero Unit.</h2>
+                </div>
+                <div class="feature">
+                    <h3>Featured Content 1</h3>
+                    <p>lorem ipsum dolor amet lorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum.</p>
+                </div>
+                <div class="feature">
+                    <h3>Featured Content 2</h3>
+                    <p>lorem ipsum dolor amet lorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor ametlorem ipsum dolor.</p>
+                </div>
+            <footer>
+                &copy;2012 Francisco Campos Arias, All Rigts Reserved.
+            </footer>
+            </div>
+        </body>
+        </html>
+        ''')
+
+@deta.cache(expire=20)
+def textResponse(request: Request):
+    return PlainTextResponse('detacache')
+
+
+routes = [
+    Route("/text", endpoint=textResponse),
+    Route("/html", endpoint=htmlResponse),
+    Route("/json", endpoint=jsonResponse),
+    Route("/bool", endpoint=boolResponse),
+    Route("/float", endpoint=floatResponse),
+    Route("/int", endpoint=intResponse),
+    Route("/set", endpoint=setResponse),
+    Route("/list", endpoint=listResponse),
+    Route("/tuple", endpoint=tupleResponse),
+    Route("/str", endpoint=strResponse),
+    Route("/dict", endpoint=dictResponse),
+]
+
+app = Starlette(routes=routes)
 ```
 ## License
 

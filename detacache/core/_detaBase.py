@@ -1,4 +1,3 @@
-
 import typing
 import aiohttp
 import requests
@@ -58,4 +57,3 @@ class AsyncBase(DetaBase):
             async with _session.get(f"{self._baseUrl}/items/{key}") as resp:
                 _res = await resp.json()
                 return _res if len(_res) > 1 else None
-
